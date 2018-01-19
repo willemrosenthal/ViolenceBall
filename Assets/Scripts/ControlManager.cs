@@ -11,6 +11,8 @@ public class ControlManager : MonoBehaviour {
 	public float charge;
 	public float fullChargeTime = 3;
 
+	public bool mustEnterScene = true;
+
 	List<Player> players;
 	Ball ball;
 
@@ -32,19 +34,51 @@ public class ControlManager : MonoBehaviour {
 	}
 
 	void Update () {
-		if (ball.state == "idle" || ball.heldBy != players [currentPlayer])
-			GetClosestPlayer ();
-		players [currentPlayer].GetComponent<PlayerController> ().PlayerControlls (playerInputs);
+		// if ball is held
+		if (ball.heldBy == players [currentPlayer]) {
+			players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
+		}
+
+		// if ball not held
+		else {
+			// if you aren't controlling the guy with the ball, find the clostest player
+			currentPlayer = GetClosestPlayer ();
+
+			// if enemy posession
+			if (ball.team != team && ball.heldBy != null) {
+				players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
+				Debug.Log("player controlled?");
+			}
+			/*
+			// if player is on-screen, then you can controll him
+			if (!gm.camera.OnCamera (players [currentPlayer].transform.position, 1.5f) && mustEnterScene) {
+				players [currentPlayer].GetComponent<PlayerAI> ().AdvanceOnBall ();
+			}
+
+			// if closest player is well off-screen, then bring him back
+			else if (!gm.camera.OnCamera (players [currentPlayer].transform.position, -5) && !mustEnterScene) {
+				mustEnterScene = true;
+			}
+
+			// controll player
+			else {
+				players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
+				mustEnterScene = false;
+			}
+			*/
+		}
 	}
 	 
-	void GetClosestPlayer() {
-		float dist = Vector2.Distance (players [currentPlayer].transform.position, ball.actualPosition);
+	int GetClosestPlayer() {
+		int closestPlayer = 0;
+		float dist = Vector2.Distance (players [closestPlayer].transform.position, ball.actualPosition);
 		for (int i = 0; i < players.Count; i++) {
 			if (dist > Vector2.Distance (players [i].transform.position, ball.actualPosition)) {
 				dist = Vector2.Distance (players [i].transform.position, ball.actualPosition);
-				currentPlayer = i;
+				closestPlayer = i;
 			}
 		}
+		return closestPlayer;
 	}
 
 	void BuildPlayerList () {
@@ -110,6 +144,16 @@ public class ControlManager : MonoBehaviour {
 		}
 		if (currentPlayer >= players.Count)
 			currentPlayer = 0;
+	}
+
+	public bool IsClosetPlayer(Player check) {
+		if (GetClosestPlayer () == check.playerNo)
+			return true;
+		return false;
+	}
+
+	public int TotalPlayers() {
+		return players.Count;
 	}
 
 }

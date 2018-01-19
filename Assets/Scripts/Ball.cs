@@ -6,9 +6,11 @@ using PowerTools;
 
 public class Ball : WorldObject {
 
+	public bool attack;
 	public string state;
 	public int stage;
 	public Player heldBy;
+	public int team;
 
 	public GameObject bloodSpirt;
 
@@ -16,7 +18,7 @@ public class Ball : WorldObject {
 	float maxPassDistance = 10;
 	float minPassSpeed = 10;
 	float speedPerMeter = 1f;
-	Player passsTo;
+	public Player passTo;
 	Vector3 passDestination;
 	Vector3 passBouncePoint;
 	float passSpeed;
@@ -58,6 +60,12 @@ public class Ball : WorldObject {
 	}
 
 	void Update () {
+		// makes ball safe again
+		if (grounded && attack)
+			attack = false;
+		if (!attack && !anim.IsPlaying (ballNormal))
+			anim.Play (ballNormal);
+
 		if (state == "held") {
 			transform.position = heldBy.transform.position + Vector3.up * actualPosition.z;
 			actualPosition = heldBy.transform.position + Vector3.forward * actualPosition.z;
@@ -65,6 +73,7 @@ public class Ball : WorldObject {
 		if (state == "pass") {
 			if (stage == 0) {
 				if (MoveToPoint (passBouncePoint, 0, passSpeed)) {
+					attack = false;
 					ResetAction ();
 					stage++;
 				}
@@ -127,8 +136,6 @@ public class Ball : WorldObject {
 			}
 		}
 
-		if (state == "idle" && !anim.IsPlaying (ballNormal))
-			anim.Play (ballNormal);
 	}
 
 	public override void LateUpdate () {
@@ -137,6 +144,7 @@ public class Ball : WorldObject {
 	}
 
 	public void BallAquired(Player player) {
+		team = player.team;
 		heldBy = player;
 		state = "held";
 		noMovement = true;
@@ -146,14 +154,14 @@ public class Ball : WorldObject {
 		
 
 	public void Pass(Player destinationPlayer, float passHeight) {
-		passsTo = destinationPlayer;
+		passTo = destinationPlayer;
 		noMovement = true;
 		applyGravity = false;
 		actualPosition = heldBy.transform.position + Vector3.forward * passHeight;
 		state = "pass";
 		stage = 0;
 
-		passDestination = passsTo.transform.position + Vector3.forward * passsTo.ballCarryHeight;
+		passDestination = passTo.transform.position + Vector3.forward * passTo.ballCarryHeight;
 		passBouncePoint = Vector2.Lerp ((Vector2)actualPosition, (Vector2)passDestination, 0.5f);
 
 		float passDistance = Vector2.Distance ((Vector2)actualPosition, (Vector2)passDestination);
@@ -161,7 +169,7 @@ public class Ball : WorldObject {
 		if (passDistance > maxPassDistance) {
 			float ratio = maxPassDistance / passDistance;
 			passDestination = Vector2.Lerp ((Vector2)actualPosition, (Vector2)passDestination, ratio);
-			passDestination.z = passsTo.ballCarryHeight;
+			passDestination.z = passTo.ballCarryHeight;
 			passBouncePoint = Vector2.Lerp ((Vector2)actualPosition, (Vector2)passDestination, 0.5f);
 		}
 			
@@ -171,6 +179,11 @@ public class Ball : WorldObject {
 		//CalculateVelocity (passsTo.transform.position + Vector3.forward * passsTo.ballCarryHeight, true);
 		ResetAction ();
 		heldBy = null;
+
+		// makes ball dangerous
+		grounded = false;
+		attack = true;
+		anim.Play (ballDangerous);
 	}
 
 	public void Throw(Vector2 direction, float power, float passHeight) {
@@ -197,6 +210,9 @@ public class Ball : WorldObject {
 		heldBy = null;
 
 
+
+		// makes ball dangerous
+		attack = true;
 		anim.Play (ballDangerous);
 	}
 

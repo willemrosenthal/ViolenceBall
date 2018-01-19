@@ -1,11 +1,12 @@
 fileFormatVersion: 2
 guid: ac8ed9ca4ad1b42dca0a095d5ef03693
-timeCreated: 1516136619
+timeCreated: 1516372928
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
     21300000: grass_0
     21300002: grass_1
+    21300004: grass_2
   externalObjects: {}
   serializedVersion: 4
   mipmaps:
@@ -103,6 +104,20 @@ TextureImporter:
         height: 16
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+    - serializedVersion: 2
+      name: grass_2
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 0
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []

@@ -20,14 +20,14 @@ public class Player : MonoBehaviour {
 
 	public GameObject icon;
 
-	PlayerController pc;
+	PlayerAI pc;
 	SpriteRenderer renderer;
 	ControlManager cm;
 	GameManager gm;
 
 	void Start () {
 		gm = GameManager.Instance;
-		pc = GetComponent<PlayerController> ();
+		pc = GetComponent<PlayerAI> ();
 		renderer = GetComponent<SpriteRenderer> ();
 		cm = gm.cm [team];
 	}
@@ -64,14 +64,14 @@ public class Player : MonoBehaviour {
 			if (ball.actualPosition.z > renderer.bounds.size.y - 0.3f)
 				return;
 			// if ball is ok to pick up
-			if ((ball.state == "idle" || ball.state == "pass") && state != "passing" && state != "throwing") {
+			if (!ball.attack && state != "passing" && state != "throwing") {
 				ball.BallAquired (this);
 				pc.hasBall = true;
 				cm.currentPlayer = playerNo;
 				cm.charge = 0;
 			}
 			// if ball is in attack mode
-			if (ball.state == "throw" || ball.state == "max-throw" || ball.state == "idle-dangerous") {
+			if (ball.attack) {
 				ball.Attack (this);
 			}
 		}   
@@ -83,28 +83,29 @@ public class Player : MonoBehaviour {
 	}
 
 	public void Pass() {
+		// if pass is null, find someone to pass to
+		while (passTo == null)
+			PrepPass ();
+		
 		gm.ball.Pass (passTo, ballCarryHeight);
 		state = "passing";
-		pc.hasBall = false;
 		stateResetTimer = 0.1f;
-		passTo = null;
 		icon.GetComponent<SpriteRenderer> ().enabled = false;
-		cm.charge = 0;
-		// tell ball to bounce-pass to him.
-			// calculate mid point
-			// set ball on path
-
-		// tell teammate to not move from that spot
-
-		// gain controll once teammate has ball
+		RelinquishBall ();
 	}
 
 	public void Throw() {
 		gm.ball.Throw (pc.focusDirection, cm.charge, ballCarryHeight);
 		state = "throwing";
-		pc.hasBall = false;
 		stateResetTimer = 0.1f;
+		RelinquishBall ();
+	}
+
+	// call this anytime you stop havin the ball
+	void RelinquishBall () {
 		cm.charge = 0;
+		pc.hasBall = false;
+		passTo = null;
 	}
 
 	void Die() {
