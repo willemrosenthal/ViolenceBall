@@ -67,6 +67,7 @@ public class Ball : WorldObject {
 			anim.Play (ballNormal);
 
 		if (state == "held") {
+			actualPosition.z = 0.5f;
 			transform.position = heldBy.transform.position + Vector3.up * actualPosition.z;
 			actualPosition = heldBy.transform.position + Vector3.forward * actualPosition.z;
 		} 
@@ -111,6 +112,8 @@ public class Ball : WorldObject {
 			attackingPlayer.state = "attacked";
 			dammageTime -= Time.deltaTime;
 
+			attackingPlayer.stateResetTimer = 0.1f;
+
 			attackingTimer -= Time.deltaTime;
 			if (attackingTimer <= 0) {
 				attackingTimer = attackFrequency;
@@ -145,11 +148,11 @@ public class Ball : WorldObject {
 
 	public void BallAquired(Player player) {
 		team = player.team;
+		player.GetComponent<PlayerAI> ().goalInterrupt = true;
 		heldBy = player;
 		state = "held";
 		noMovement = true;
 		renderer.enabled = false;
-		actualPosition.z = 0.7f;
 	}
 		
 
@@ -210,9 +213,9 @@ public class Ball : WorldObject {
 		heldBy = null;
 
 
-
 		// makes ball dangerous
 		attack = true;
+		grounded = false;
 		anim.Play (ballDangerous);
 	}
 

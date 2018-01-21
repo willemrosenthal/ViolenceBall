@@ -13,6 +13,10 @@ public class ControlManager : MonoBehaviour {
 
 	public bool mustEnterScene = true;
 
+	public Texture teamPallete;
+
+	public bool aiTeam = false;
+
 	List<Player> players;
 	Ball ball;
 
@@ -34,6 +38,9 @@ public class ControlManager : MonoBehaviour {
 	}
 
 	void Update () {
+		if (aiTeam)
+			return;
+
 		// if ball is held
 		if (ball.heldBy == players [currentPlayer]) {
 			players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
@@ -41,31 +48,32 @@ public class ControlManager : MonoBehaviour {
 
 		// if ball not held
 		else {
-			// if you aren't controlling the guy with the ball, find the clostest player
-			currentPlayer = GetClosestPlayer ();
 
 			// if enemy posession
 			if (ball.team != team && ball.heldBy != null) {
-				players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
-				Debug.Log("player controlled?");
-			}
-			/*
-			// if player is on-screen, then you can controll him
-			if (!gm.camera.OnCamera (players [currentPlayer].transform.position, 1.5f) && mustEnterScene) {
-				players [currentPlayer].GetComponent<PlayerAI> ().AdvanceOnBall ();
-			}
 
-			// if closest player is well off-screen, then bring him back
-			else if (!gm.camera.OnCamera (players [currentPlayer].transform.position, -5) && !mustEnterScene) {
-				mustEnterScene = true;
-			}
+				// if player not on-screen, then move him on-screen
+				if (!gm.camera.OnCamera (players [currentPlayer].transform.position, 1.5f) && mustEnterScene) {
+					players [currentPlayer].GetComponent<PlayerAI> ().AdvanceOnBall ();
+				}
 
-			// controll player
+				// if closest player is well off-screen, then bring him back
+				else if (!gm.camera.OnCamera (players [currentPlayer].transform.position, -5) && !mustEnterScene) {
+					mustEnterScene = true;
+					currentPlayer = GetClosestPlayer ();
+				}
+
+				// controll player
+				else {
+					players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
+					mustEnterScene = false;
+				}
+			}
+			// get closest player
 			else {
-				players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
-				mustEnterScene = false;
+				currentPlayer = GetClosestPlayer ();
 			}
-			*/
+
 		}
 	}
 	 
@@ -88,9 +96,13 @@ public class ControlManager : MonoBehaviour {
 		for (int i = 0; i < playerArray.Length; i++) {
 			if (playerArray[i].team == team) {
 				players.Add (playerArray [i]);
-				playerArray [i].playerNo = i;
+				playerArray [i].playerNo = players.Count-1;
+				playerArray [i].GetComponent<PaletteSwap> ().PaletteTexture = teamPallete;
+				playerArray [i].GetComponent<PaletteSwap> ().UpdatePaletteTexture ();
 			}
 		}
+
+		gm.aiCalc.players [team] = players;
 	}
 
 	float angleRange = 30;

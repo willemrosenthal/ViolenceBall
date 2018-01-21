@@ -16,18 +16,18 @@ public class Player : MonoBehaviour {
 	public float ballCarryHeight = 0.7f;
 
 	public string state;
-	float stateResetTimer;
+	public float stateResetTimer;
 
 	public GameObject icon;
 
-	PlayerAI pc;
+	PlayerAI ai;
 	SpriteRenderer renderer;
 	ControlManager cm;
 	GameManager gm;
 
 	void Start () {
 		gm = GameManager.Instance;
-		pc = GetComponent<PlayerAI> ();
+		ai = GetComponent<PlayerAI> ();
 		renderer = GetComponent<SpriteRenderer> ();
 		cm = gm.cm [team];
 	}
@@ -64,9 +64,9 @@ public class Player : MonoBehaviour {
 			if (ball.actualPosition.z > renderer.bounds.size.y - 0.3f)
 				return;
 			// if ball is ok to pick up
-			if (!ball.attack && state != "passing" && state != "throwing") {
+			if (!ball.attack && ball.heldBy == null && state != "passing" && state != "throwing") {
 				ball.BallAquired (this);
-				pc.hasBall = true;
+				ai.hasBall = true;
 				cm.currentPlayer = playerNo;
 				cm.charge = 0;
 			}
@@ -76,10 +76,19 @@ public class Player : MonoBehaviour {
 			}
 		}   
 	}
+	void OnTriggerStay2D(Collider2D c) {
+		Ball ball = c.gameObject.GetComponent<Ball> ();
+		if (!ball.attack && ball.heldBy == null && state != "passing" && state != "throwing") {
+			ball.BallAquired (this);
+			ai.hasBall = true;
+			cm.currentPlayer = playerNo;
+			cm.charge = 0;
+		}
+	}
 
 	public void PrepPass() {
 		// find closest player in direction of joystick
-		passTo = cm.FindPlayerInDirection(pc.focusDirection, this);
+		passTo = cm.FindPlayerInDirection(ai.focusDirection, this);
 	}
 
 	public void Pass() {
@@ -95,7 +104,7 @@ public class Player : MonoBehaviour {
 	}
 
 	public void Throw() {
-		gm.ball.Throw (pc.focusDirection, cm.charge, ballCarryHeight);
+		gm.ball.Throw (ai.focusDirection, cm.charge, ballCarryHeight);
 		state = "throwing";
 		stateResetTimer = 0.1f;
 		RelinquishBall ();
@@ -104,8 +113,9 @@ public class Player : MonoBehaviour {
 	// call this anytime you stop havin the ball
 	void RelinquishBall () {
 		cm.charge = 0;
-		pc.hasBall = false;
+		ai.hasBall = false;
 		passTo = null;
+		ai.goalInterrupt = true;
 	}
 
 	void Die() {

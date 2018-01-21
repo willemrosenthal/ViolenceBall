@@ -26,9 +26,11 @@ public class GameManager : MonoBehaviour {
 	public Ball ball;
 	public GameCamera camera;
 	public ControlManager[] cm;
+	public AICalculations aiCalc;
 
 	void Awake () {
 		cm = new ControlManager[2];
+		aiCalc = GetComponent<AICalculations> ();
 
 		QualitySettings.vSyncCount = 1;
 		Application.targetFrameRate = (int)fps;

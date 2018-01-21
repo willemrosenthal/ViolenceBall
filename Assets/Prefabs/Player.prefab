@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 61202535683787080}
   - component: {fileID: 50990532575335716}
   - component: {fileID: 114912819656790402}
+  - component: {fileID: 114448784175995560}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -110,7 +111,7 @@ BoxCollider2D:
   m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.08}
+    pivot: {x: 0.5, y: 0.1}
     oldSize: {x: 1.40625, y: 1.78125}
     newSize: {x: 0.45, y: 0.56}
     adaptiveTilingThreshold: 0.5
@@ -137,6 +138,8 @@ MonoBehaviour:
   ability: none
   home: {x: 0, y: 0}
   pos: {x: 0, y: 0}
+  goal: {x: 0, y: 0}
+  passTo: 0
   aiControlled: 0
   positionList:
   - forward
@@ -145,6 +148,18 @@ MonoBehaviour:
   abilityList:
   - none
   - jet bootst
+--- !u!114 &114448784175995560
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1049102408944500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b013995c95ad4c24bb7d778d8891efe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PaletteTexture: {fileID: 0}
 --- !u!114 &114912198609698122
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -195,7 +210,7 @@ SpriteRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: ce315cac2f5c846a29d11e8d5a5bad5f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -215,7 +230,7 @@ SpriteRenderer:
   m_SortingLayerID: -1020848073
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 3b1819ae545b1440d82af235acc41f8f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 68f968507154f4719aa28a5c2f86535a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
