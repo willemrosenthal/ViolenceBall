@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour {
 	// SINGLETON
 	public static GameManager Instance { get; private set; }
 
+	public float playArea = 8;
 
 	public float pixPerUnit = 32;
 	public float pxSize;
@@ -60,6 +61,22 @@ public class GameManager : MonoBehaviour {
 		Gizmos.color = Color.yellow;
 		Gizmos.DrawWireCube (arenaWalls.center + Vector3.right * (arenaWalls.size.x * 0.5f + goalSize * 0.5f), new Vector3(goalSize, goalArea.size.y));
 		Gizmos.DrawWireCube (arenaWalls.center - Vector3.right * (arenaWalls.size.x * 0.5f + goalSize * 0.5f), new Vector3(goalSize, goalArea.size.y));
+
+		// play area
+		Gizmos.DrawWireSphere ((Vector2)Camera.main.transform.position, playArea);
+
+		// draw ball location
+		if (ball != null) {
+			Gizmos.color = Color.yellow;
+			Gizmos.DrawWireSphere ((Vector2)ball.transform.position, 0.25f);
+			Gizmos.color = Color.blue;
+			Gizmos.DrawWireSphere ((Vector2)ball.transform.position, 0.2f);
+		}
 	}
 
+	public bool InPlayArea(Vector2 pos) {
+		if (Vector2.Distance (pos, (Vector2)camera.transform.position) < playArea)
+			return true;
+		return false;
+	}
 }

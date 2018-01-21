@@ -43,7 +43,7 @@ public class ControlManager : MonoBehaviour {
 
 		// if ball is held
 		if (ball.heldBy == players [currentPlayer]) {
-			players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
+			players [currentPlayer].GetComponent<PlayerController> ().PlayerControlls (playerInputs);
 		}
 
 		// if ball not held
@@ -65,7 +65,7 @@ public class ControlManager : MonoBehaviour {
 
 				// controll player
 				else {
-					players [currentPlayer].GetComponent<PlayerAI> ().PlayerControlls (playerInputs);
+					players [currentPlayer].GetComponent<PlayerController> ().PlayerControlls (playerInputs);
 					mustEnterScene = false;
 				}
 			}

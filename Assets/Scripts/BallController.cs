@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class WorldObject : MonoBehaviour {
+public class BallController : MonoBehaviour {
 
 	public Vector3 actualPosition;
 	public Vector3 velocity;
 	public bool grounded;
+	public bool attack;
 
 	public bool applyGravity;
 	public float gravityScale = 1;
@@ -49,6 +50,7 @@ public class WorldObject : MonoBehaviour {
 				velocity.z *= -1;
 				actualPosition.z = 0;
 				velocity *= friction; // drag
+				attack = false;
 			}
 
 			GroundedCheck (ref moveAmmount);

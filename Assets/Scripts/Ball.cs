@@ -4,9 +4,8 @@ using UnityEngine;
 using PowerTools;
 
 
-public class Ball : WorldObject {
+public class Ball : BallController {
 
-	public bool attack;
 	public string state;
 	public int stage;
 	public Player heldBy;
@@ -60,9 +59,6 @@ public class Ball : WorldObject {
 	}
 
 	void Update () {
-		// makes ball safe again
-		if (grounded && attack)
-			attack = false;
 		if (!attack && !anim.IsPlaying (ballNormal))
 			anim.Play (ballNormal);
 
@@ -93,7 +89,7 @@ public class Ball : WorldObject {
 		}
 		if (state == "max-throw") {
 			if (MoveToPoint (throwDestination, 0, powerThrowSpeed)) {
-				state = "idle-dangerous";
+				state = "idle";
 				noMovement = false;
 				applyGravity = true;
 			}
@@ -112,7 +108,7 @@ public class Ball : WorldObject {
 			attackingPlayer.state = "attacked";
 			dammageTime -= Time.deltaTime;
 
-			attackingPlayer.stateResetTimer = 0.1f;
+			attackingPlayer.stateTimer = 0.1f;
 
 			attackingTimer -= Time.deltaTime;
 			if (attackingTimer <= 0) {
@@ -124,18 +120,13 @@ public class Ball : WorldObject {
 
 			if (dammageTime <= 0) {
 				bloodSpirt.GetComponent<ParticleSystem> ().Stop ();
-				state = "idle-dangerous";
+				state = "idle";
 				noMovement = false;
 				applyGravity = true;
-				attackingPlayer.state = "";
+				attackingPlayer.state = "normal";
 				velocity = velocity * 0.5f;
 				velocity.z -= 3 + Random.value * 3;
 				dammageTime = 0.4f;
-			}
-		}
-		if (state == "idle-dangerous") {
-			if (grounded) {
-				state = "idle";
 			}
 		}
 
@@ -146,7 +137,7 @@ public class Ball : WorldObject {
 		collider.offset = new Vector2 (0, colliderYOffset - actualPosition.z);
 	}
 
-	public void BallAquired(Player player) {
+	public void AquireBall(Player player) {
 		team = player.team;
 		player.GetComponent<PlayerAI> ().goalInterrupt = true;
 		heldBy = player;
@@ -178,15 +169,9 @@ public class Ball : WorldObject {
 			
 		passSpeed = minPassSpeed + Vector2.Distance ((Vector2)actualPosition, (Vector2)passDestination) * speedPerMeter;
 
-		renderer.enabled = true;
 		//CalculateVelocity (passsTo.transform.position + Vector3.forward * passsTo.ballCarryHeight, true);
 		ResetAction ();
-		heldBy = null;
-
-		// makes ball dangerous
-		grounded = false;
-		attack = true;
-		anim.Play (ballDangerous);
+		RelinquishBall ();
 	}
 
 	public void Throw(Vector2 direction, float power, float passHeight) {
@@ -207,15 +192,17 @@ public class Ball : WorldObject {
 		}
 
 		dammageTime = (power * 0.5f + 0.5f);
+
+		ResetAction ();
+		RelinquishBall ();
+	}
+
+	void RelinquishBall() {
+		heldBy = null;
+		//attack = true;
+		grounded = false;
 		stage = 0;
 		renderer.enabled = true;
-		ResetAction ();
-		heldBy = null;
-
-
-		// makes ball dangerous
-		attack = true;
-		grounded = false;
 		anim.Play (ballDangerous);
 	}
 

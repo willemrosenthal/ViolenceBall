@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class PlayerAI : MonoBehaviour {
 
-	public bool hasBall;
 	public Vector2 focusDirection;
 
 	public string position;
@@ -19,17 +18,6 @@ public class PlayerAI : MonoBehaviour {
 
 	public bool aiControlled = true;
 
-	float speed = 7;
-	float jetSpeed = 14;
-
-	Vector2 velocity;
-
-	bool jetBoost = false;
-	Vector2 jetSteer;
-	float smoothJetVelocity;
-
-	Vector2 movingDir;
-
 	GameManager gm;
 	ControlManager cm;
 	ControlManager cmEnemy;
@@ -37,13 +25,16 @@ public class PlayerAI : MonoBehaviour {
 	Ball ball;
 	AICalculations aiCalc;
 
+	PlayerController pc;
 
 	void Start () {
 		player = GetComponent<Player> ();
+		pc = GetComponent<PlayerController> ();
 		gm = GameManager.Instance;
 		cm = gm.cm [player.team];
 		ball = gm.ball;
 		aiCalc = gm.aiCalc;
+
 		int enemyteam = 0;
 		if (player.team == 0)
 			enemyteam = 1;
@@ -55,30 +46,27 @@ public class PlayerAI : MonoBehaviour {
 
 	float maxMoveStep = 5;
 
-	void AI () {
+	public void AI () {
 		// reset movement direction
-		movingDir = Vector2.zero;
-
-		// freeze if being attacked
-		if (player.state == "attacked")
-			return;
+		pc.movingDir = Vector2.zero;
 
 		// if you have the ball
-		if (hasBall) {
-			AIHasBall ();
+		if (player.hasBall) {
+			HasBall ();
 		}
 		// if you don't have the ball
 		else {
-			AINoBall ();
+			NoBall ();
 		}
 
-		movingDir = movingDir.normalized;
+		pc.movingDir = pc.movingDir.normalized;
 
 		// move towards goal
 		if (!GoalAchieved ()) {
-			movingDir = GetDirection (goal);
+			pc.movingDir = GetDirection (goal);
 		}
 
+		/*
 		// dont move when ball is being passed to you
 		if (ball.passTo == this.player && ball.heldBy == null)
 			movingDir = Vector2.zero;
@@ -97,92 +85,21 @@ public class PlayerAI : MonoBehaviour {
 
 				
 		}
+		*/
+		pc.SetVelocity (pc.movingDir);
 
-		velocity = movingDir * speed;
 	}
 
 	public void AdvanceOnBall() {
-		movingDir = TowardsBall ();
-		velocity = speed * (Vector3)movingDir;
+		pc.movingDir = TowardsBall ();
 	}
 
-	public void PlayerControlls(PlayerInputs playerInputs) {
-		if (player.state == "attacked")
-			return;
-
-		pos = (Vector2)transform.position;
-		aiControlled = false;
-
-		// movement
-		if (Mathf.Abs(playerInputs.LeftStick.Value.x) > 0.3f || Mathf.Abs(playerInputs.LeftStick.Value.y) > 0.3f)
-			focusDirection = playerInputs.LeftStick.Value.normalized;
-
-		// throwing
-		if (hasBall && playerInputs.RightTrigger.IsPressed) {
-			if (cm.charge < 1) {
-				cm.charge += Time.deltaTime / cm.fullChargeTime;
-			} if (cm.charge >= 1) {
-				cm.charge = 1;
-			}
-		}
-		if (hasBall && playerInputs.RightTrigger.WasReleased) {
-			player.Throw ();
-		}
-		else if (hasBall && !playerInputs.RightTrigger.IsPressed) {
-			cm.charge = 0;
-		}
-
-		// passing
-		if (cm.TotalPlayers () > 1) {
-			if (playerInputs.AButton.IsPressed && hasBall) {
-				player.PrepPass ();
-			}
-			else if (playerInputs.AButton.WasReleased && hasBall) {
-				player.Pass ();
-			}
-		}
-
-		// movement
-		movingDir = playerInputs.LeftStick.Value.normalized;
-		velocity = speed * (Vector3)movingDir;
-
-		// Player Abilitites
-		if (ability == "jet boost")
-			JetBoost (playerInputs);
-	}
-
-	void Update () {
-		pos = (Vector2)transform.position;
-
-		if (aiControlled)
-			AI ();
-		
-		Move (velocity * Time.deltaTime);
-		velocity = Vector3.zero;
-
-		// reset player controlled val
-		aiControlled = true;
-	}
 
 
 	void Move(Vector2 v) {
 		transform.position = transform.position + (Vector3)v;
 	}
 
-	// player specific abilitites
-	void JetBoost(PlayerInputs playerInputs) {
-		if (playerInputs.XButton.IsPressed) {
-			velocity = jetSpeed * (Vector3)movingDir;
-
-			// steering
-			float cDegree = Vector2.SignedAngle (Vector2.up, movingDir);
-			float degree = Vector2.SignedAngle (Vector2.up, playerInputs.LeftStick.Value.normalized);
-
-			cDegree = Mathf.SmoothDampAngle (cDegree, degree, ref smoothJetVelocity, 0.75f);
-
-			movingDir = (Vector2)(Quaternion.Euler (0, 0, cDegree) * Vector2.up);
-		}
-	}
 
 	// AI HELPER EQUATIONS
 	// is location on your team's side of the center
@@ -191,7 +108,7 @@ public class PlayerAI : MonoBehaviour {
 	}
 
 	public Vector2 TowardsBall() {
-		return new Vector2 (ball.transform.position.x - pos.x, ball.transform.position.y - pos.y ).normalized;
+		return new Vector2 (ball.transform.position.x - pc.pos.x, ball.transform.position.y - pc.pos.y ).normalized;
 	}
 
 	public bool TeamSide(Vector3 loc,  float margin = 0) {
@@ -210,30 +127,12 @@ public class PlayerAI : MonoBehaviour {
 
 	// get direction of point
 	Vector2 GetDirection(Vector2 point) {
-		return new Vector2 (point.x - pos.x, point.y - pos.y ).normalized;
+		return new Vector2 (point.x - pc.pos.x, point.y - pc.pos.y ).normalized;
 	}
+		
 
-	// POSITION LIST
-	public string[] positionList = new string[]
-	{
-		"forward",
-		"striker",
-		"defence"
-	};
-	// ABILITY LIST
-	public string[] abilityList = new string[]
-	{
-		"none",
-		"jet bootst"
-	};
-
-
-
-	bool IsNearGoalX() {
-		return Mathf.Abs (pos.x - aiCalc.goals [player.team].x) < 7;
-	}
 	bool IsNearGoalY() {
-		return Mathf.Abs (pos.y) < 6;
+		return Mathf.Abs (pc.pos.y) < 6;
 	}
 
 	void AttackOrPass() {
@@ -263,22 +162,21 @@ public class PlayerAI : MonoBehaviour {
 	}
 
 	void GetZone() {
-		if (Mathf.Abs (pos.x - aiCalc.goals [player.team].x) < 7)
+		if (Mathf.Abs (pc.pos.x - aiCalc.goals [player.team].x) < 7)
 			zone = "attack";
-		else if (TeamSide(pos, 1))
+		else if (TeamSide(pc.pos, 1))
 			zone = "defence";
 		else zone = "center";
 	}
 
 
 	string zone;
-	void AIHasBall() {
+	void HasBall() {
 		// if read to make a new descition
 		if (GoalAchieved() || goalInterrupt) {
 			// find out where on the field you are
 			GetZone();
-			Debug.Log (zone);
-			Time.timeScale = 0.5f;
+
 
 			if (zone == "attack") {
 				if (IsNearGoalY()) {
@@ -303,18 +201,29 @@ public class PlayerAI : MonoBehaviour {
 				AttackOrPass ();
 			}
 
-			goalInterrupt = false;
+			goalInterrupt = true;
 		}
 	}
 
-	void AINoBall () {
-		// if read to make a new descition
-		if (GoalAchieved() || goalInterrupt) {
+	void NoBall () {
+		// if you leave the play area
+		if (!gm.InPlayArea(pc.pos)) {
 			goal = home;
+		}
+
+		// if in the play area, you are close and enemy has the ball
+		if (cm.IsClosetPlayer(player) && ball.heldBy != null && ball.team != player.team) {
+			goal = (Vector2)ball.transform.position;
 			goalInterrupt = false;
 		}
 
-		if (cm.IsClosetPlayer(player)) {
+		// if enemy team has ball and you are NOT the closest player
+		if (!cm.IsClosetPlayer (player) && ball.heldBy != null && ball.team != player.team) {
+			goal = home;
+		}
+
+		// if nobody has the ball, go for it
+		if (ball.heldBy == null && gm.InPlayArea(pc.pos)) {
 			goal = (Vector2)ball.transform.position;
 			goalInterrupt = true;
 		}

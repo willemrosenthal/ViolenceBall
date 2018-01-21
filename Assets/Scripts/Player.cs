@@ -10,52 +10,78 @@ public class Player : MonoBehaviour {
 	public int team;
 	public int playerNo;
 
-	public LayerMask mask;
+	public Vector2 velocity;
 
+	public bool hasBall;
 	public Player passTo = null;
 	public float ballCarryHeight = 0.7f;
 
-	public string state;
-	public float stateResetTimer;
+	public string state = "normal";
+	public float stateTimer;
 
 	public GameObject icon;
+
+	// state values
+	float runSpeed = 7;
+
+
 
 	PlayerAI ai;
 	SpriteRenderer renderer;
 	ControlManager cm;
 	GameManager gm;
+	PlayerController pc;
+	Ball ball;
 
 	void Start () {
 		gm = GameManager.Instance;
+		ball = gm.ball;
 		ai = GetComponent<PlayerAI> ();
 		renderer = GetComponent<SpriteRenderer> ();
 		cm = gm.cm [team];
+		pc = GetComponent<PlayerController> ();
 	}
 
 	void Update () {
 		StateTimer ();
 
-		if (passTo != null) {
-			icon.GetComponent<SpriteRenderer> ().enabled = true;
-			icon.transform.position = passTo.transform.position;
+		if (state == "normal") {
+			pc.speed = runSpeed;
 		}
-		if (health < 0) {
-			health = 0;
-			Die ();
+		else if (state == "stun") {
+			pc.speed = 0;
 		}
-		healthBar.transform.localScale = new Vector3 (health, 1, 0);
+		else if (state == "throw") {
+			pc.speed = 0;
+		}
+		else if (state == "attacked") {
+			pc.speed = 0;
+		}
+
+		pc.Move (velocity); 
 	}
 
 	void StateTimer() {
-		if (stateResetTimer > 0) {
-			stateResetTimer -= Time.deltaTime;
-			if (stateResetTimer <= 0)
-				state = "";
+		if (stateTimer > 0) {
+			stateTimer -= Time.deltaTime;
+			if (stateTimer <= 0)
+				state = "normal";
 		}
 	}
 
 	public virtual void LateUpdate () {
 		renderer.sortingOrder = (int)Camera.main.WorldToScreenPoint (transform.position).y * -1;
+	}
+
+	void OnCollisionEnter2D(Collision2D col) {
+		Player enemyCol = col.gameObject.GetComponent<Player> ();
+		// if you collide with an enemy player
+		if (enemyCol && enemyCol.team != team && !hasBall) {
+			// steal ball
+			if (enemyCol.hasBall) {
+				enemyCol.Stun (this);
+			}
+		}
 	}
 
 	void OnTriggerEnter2D(Collider2D c) {
@@ -64,11 +90,9 @@ public class Player : MonoBehaviour {
 			if (ball.actualPosition.z > renderer.bounds.size.y - 0.3f)
 				return;
 			// if ball is ok to pick up
-			if (!ball.attack && ball.heldBy == null && state != "passing" && state != "throwing") {
-				ball.BallAquired (this);
-				ai.hasBall = true;
-				cm.currentPlayer = playerNo;
-				cm.charge = 0;
+			if (!ball.attack && ball.heldBy == null && state != "throw" && state != "stun") {
+				ball.AquireBall (this);
+				AquireBall ();
 			}
 			// if ball is in attack mode
 			if (ball.attack) {
@@ -76,14 +100,12 @@ public class Player : MonoBehaviour {
 			}
 		}   
 	}
-	void OnTriggerStay2D(Collider2D c) {
-		Ball ball = c.gameObject.GetComponent<Ball> ();
-		if (!ball.attack && ball.heldBy == null && state != "passing" && state != "throwing") {
-			ball.BallAquired (this);
-			ai.hasBall = true;
-			cm.currentPlayer = playerNo;
-			cm.charge = 0;
-		}
+
+
+	public void AquireBall() {
+		hasBall = true;
+		cm.currentPlayer = playerNo;
+		cm.charge = 0;
 	}
 
 	public void PrepPass() {
@@ -97,25 +119,43 @@ public class Player : MonoBehaviour {
 			PrepPass ();
 		
 		gm.ball.Pass (passTo, ballCarryHeight);
-		state = "passing";
-		stateResetTimer = 0.1f;
+		state = "throw";
+		stateTimer = 0.1f;
 		icon.GetComponent<SpriteRenderer> ().enabled = false;
 		RelinquishBall ();
 	}
 
 	public void Throw() {
 		gm.ball.Throw (ai.focusDirection, cm.charge, ballCarryHeight);
-		state = "throwing";
-		stateResetTimer = 0.1f;
+		state = "throw";
+		stateTimer = 0.1f;
 		RelinquishBall ();
+	}
+
+	public void Stun(Player p) {
+		if (hasBall) {
+			state = "stun";
+			stateTimer = 1f;
+			RelinquishBall ();
+			ball.AquireBall (p);
+			p.AquireBall ();
+		}
 	}
 
 	// call this anytime you stop havin the ball
 	void RelinquishBall () {
 		cm.charge = 0;
-		ai.hasBall = false;
+		hasBall = false;
 		passTo = null;
-		ai.goalInterrupt = true;
+	}
+
+	public void TakeDammage(float dammage) {
+		health -= dammage;
+		healthBar.transform.localScale = new Vector3 (health, 1, 0);
+		if (health < 0) {
+			health = 0;
+			Die ();
+		}
 	}
 
 	void Die() {
